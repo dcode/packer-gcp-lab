@@ -1,4 +1,5 @@
 {
+    "_comment0": "# spellchecker: disable",
     "_comment1": "NAME=windows-10            WINDOWS_VERSION=10   DRIVER_ISO=./packer_cache/virtio-win.iso ISO_URL=https://software-download.microsoft.com/download/pr/19041.264.200511-0456.vb_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso                                             packer build windows.json",
     "_comment2": "NAME=windows-server-2016   WINDOWS_VERSION=2016 DRIVER_ISO=./packer_cache/virtio-win.iso ISO_URL=https://software-download.microsoft.com/download/pr/Windows_Server_2016_Datacenter_EVAL_en-us_14393_refresh.ISO                                                                           packer build windows.json",
     "_comment3": "NAME=windows-server-2019   WINDOWS_VERSION=2019 DRIVER_ISO=./packer_cache/virtio-win.iso ISO_URL=https://software-download.microsoft.com/download/pr/17763.737.190906-2324.rs5_release_svc_refresh_SERVER_EVAL_x64FRE_en-us_1.iso                                                          packer build windows.json",

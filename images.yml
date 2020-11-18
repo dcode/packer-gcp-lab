@@ -1,3 +1,4 @@
+# spellchecker: disable
 ---
 - name: windows-10
   windows_version: "10"

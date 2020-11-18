@@ -10,8 +10,8 @@ IMAGES_YML=images.yml
 red=$'\e[1;31m'
 grn=$'\e[1;32m'
 blu=$'\e[1;34m'
-mag=$'\e[1;35m'
-cyn=$'\e[1;36m'
+# mag=$'\e[1;35m'
+# cyn=$'\e[1;36m'
 white=$'\e[0m'
 
 # These globals are set by argument parsing for program flow
@@ -303,6 +303,7 @@ function main() {
         logit "${vars_json_debug}" "DEBUG"
 
         if [ "${validate}" == "true" ]; then
+            # shellcheck disable=SC2086
             if echo "${vars_json}" | packer validate ${_extra_args} -var-file /dev/stdin "$(_jq '.template')"; then
                 logit "Packer template ${grn}$(_jq '.template')${white} validated for build named ${grn}$(_jq '.name')${white} successfully." "INFO"
                 exit 0
@@ -312,6 +313,7 @@ function main() {
                 exit ${retval}
             fi
         else
+            # shellcheck disable=SC2086
             if ! (echo "${vars_json}" | packer build ${_extra_args} -var-file /dev/stdin "$(_jq '.template')"); then
                 retval=$?
                 logit "Packer failed to build for template ${red}$(_jq '.template')${white} for the build named ${red}$(_jq '.name')${white}." "ERROR"

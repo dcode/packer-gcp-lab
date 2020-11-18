@@ -1,4 +1,5 @@
-# Packer README
+# Packer scripts README
+<!-- # spellchecker: disable -->
 
 This directory contains [Packer](https://www.packer.io/) build scripts to creating standardized VM templates.
 By using packer, we can ensure that when VMs are loaded they have the specific build steps that we expect to
@@ -18,6 +19,7 @@ be present. This becomes particularly important over time
 ## Prereqs
 
 The script should check for these and offer ideas on how to get them, but so there's fewer surprises:
+
 
 - bash
 - packer
@@ -52,3 +54,4 @@ The `build` script processes configuration in `images.yml` and wraps `packer`, p
 ## Results
 
 I stripped out my production info, but this would feasibly upload to your GCP project and process it as an imported image via a bucket you configure. That's controlled by the environment vars `GCP_PROJECT` and `GCS_BUCKET`.
+
