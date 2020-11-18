@@ -1,0 +1,5 @@
+- [ ] Tuning: Squeeze base images to bare minimum to be functional
+- [ ] New: Create CentOS Desktop images
+- [ ] New: Add Ubuntu images
+- [ ] Improvement: Migrate configs to HCL2 templates in Packer >= 1.5
+- [ ] Improvement: Add ability for `build` script to load `variables.json` file for additional configuration options.
