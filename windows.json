@@ -86,14 +86,22 @@
     "post-processors": [
         [
             {
+                "name": "compress",
+                "type": "compress",
+                "output": "output/{{ user `name` }}_{{ build_type }}.tar.gz"
+            }
+        ],
+        [
+            {
+                "name": "gcp-import",
                 "output": "output/{{ user `name` }}_{{ build_type }}.tar.gz",
                 "type": "compress"
             },
             {
                 "type": "googlecompute-import",
-                "account_file": "{{ user `home`}}/.config/gcloud/packer_creds.json",
-                "project_id": "{{ user `project_id`}}",
-                "bucket": "{{ user `bucket_name`}}",
+                "account_file": "{{ user `gcp_account_file`}}",
+                "project_id": "{{ user `gcp_project`}}",
+                "bucket": "{{ user `gcs_bucket`}}",
                 "image_guest_os_features": [
                     "WINDOWS",
                     "MULTI_IP_SUBNET",
@@ -172,10 +180,11 @@
         "qemu_accelerator": "kvm",
         "winrm_password": "admin",
         "winrm_username": "admin",
-        "project_id": "{{ env `GCP_PROJECT_ID`}}",
-        "bucket_name": "{{ env `GCS_BUCKET`}}",
         "version": "0.0.1",
         "commit": "0000000",
-        "home": "{{ env `HOME` }}"
+        "home": "{{ env `HOME` }}",
+        "gcs_bucket": "{{ env `GCS_BUCKET` }}",
+        "gcp_project": "{{ env `GCP_PROJECT` }}",
+        "gcp_account_file": "{{ user `home`}}/.config/gcloud/application_default_credentials.json"
     }
 }

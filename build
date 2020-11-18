@@ -1,5 +1,8 @@
 #!/bin/bash -eu
 
+# uncomment to debug
+#set -x
+
 set -o pipefail
 
 IMAGES_YML=images.yml
@@ -23,6 +26,7 @@ declare accel
 declare sha256sum
 declare commit
 declare headless
+declare skip_import
 
 # Setup logging
 script_logging_level="INFO"
@@ -253,6 +257,7 @@ function main() {
         local _md5
         local _iso_checksum
         local _extra_json
+        local _extra_args
         local _driver_iso_url
         local _driver_iso_path
         local _driver_iso_sha256
@@ -261,7 +266,8 @@ function main() {
         _sha128=$(_jq '.sha128 // empty')
         _md5=$(_jq '.md5 // empty')
         _iso_checksum=${_sha256:-${_sha128:-${_md5:-}}}
-        _environment=$(_jq '.environment | to_entries | map("\(.key)=\(.value)") | join(",") // empty')
+        _environment=$(_jq '.environment // empty | to_entries | map("\(.key)=\(.value)") | join(",")')
+        _extra_args=""
 
         printf -v _extra_json '{"iso_checksum": "%s", "qemu_accelerator": "%s", "environment": "%s"}' "${_iso_checksum}" "${accel}" "${_environment}"
 
@@ -269,6 +275,7 @@ function main() {
         _driver_iso_sha256=$(_jq '.driver_iso_sha256 // empty')
         _driver_iso_path="./packer_cache/$(basename "${_driver_iso_url}")"
 
+        mkdir -p ./packer_cache
         if [ -n "${_driver_iso_url}" ]; then
             get_driver_iso "${_driver_iso_url}" "${_driver_iso_path}" "${_driver_iso_sha256}"
 
@@ -279,6 +286,10 @@ function main() {
             _extra_json=$(echo "${_extra_json}" | jq '. + {"headless": "true"}')
         else
             _extra_json=$(echo "${_extra_json}" | jq --arg display "${default_display}" '. + {"headless": "false", "display": $display}')
+        fi
+
+        if [ "${skip_import}" == "true" ]; then
+            _extra_args+=" -except=gcp-import"
         fi
 
         if [ -n "${commit}" ]; then
@@ -292,7 +303,7 @@ function main() {
         logit "${vars_json_debug}" "DEBUG"
 
         if [ "${validate}" == "true" ]; then
-            if echo "${vars_json}" | packer validate -var-file /dev/stdin "$(_jq '.template')"; then
+            if echo "${vars_json}" | packer validate ${_extra_args} -var-file /dev/stdin "$(_jq '.template')"; then
                 logit "Packer template ${grn}$(_jq '.template')${white} validated for build named ${grn}$(_jq '.name')${white} successfully." "INFO"
                 exit 0
             else
@@ -301,7 +312,7 @@ function main() {
                 exit ${retval}
             fi
         else
-            if ! (echo "${vars_json}" | packer build -var-file /dev/stdin "$(_jq '.template')"); then
+            if ! (echo "${vars_json}" | packer build ${_extra_args} -var-file /dev/stdin "$(_jq '.template')"); then
                 retval=$?
                 logit "Packer failed to build for template ${red}$(_jq '.template')${white} for the build named ${red}$(_jq '.name')${white}." "ERROR"
                 exit ${retval}
@@ -318,14 +329,15 @@ check_prereqs
 eval "$(
     docopts -V - -h - : "$@" <<EOF
 Usage:  build --list
-        build [-q|-v|-d] [--accel=<accel>] --validate ([--tag=<tag> ...] | [<name> ...])
-        build [-q|-v|-d] [--accel=<accel>] [--headless] --tag=<tag> ...
-        build [-q|-v|-d] [--accel=<accel>] [--headless] [<name> ...]
+        build [-q|-v|-d] [--accel=<accel>] --validate [--skip-import] ([--tag=<tag> ...] | [<name> ...])
+        build [-q|-v|-d] [--accel=<accel>] [--headless] [--skip-import] --tag=<tag> ...
+        build [-q|-v|-d] [--accel=<accel>] [--headless] [--skip-import] [<name> ...]
 
 Options:
     -t, --tag=<tag>     Specify a tag to filter builds. Can be used multiple times. [default: all]
     --accel=<accel>     Specify qemu accelerator to use (i.e. kvm on Linux or hvf on Mac). [default: ${default_accel}]
     --headless          Run the machine without a console [default: false]
+    --skip-import       Runs the build and skips the GCP import post-provisioner
     -q, --quiet         Suppress output except for errors.
     -v, --verbose       Generate verbose messages.
     -d, --debug         Generate debugging output (includes verbose messages).
