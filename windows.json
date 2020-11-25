@@ -12,6 +12,7 @@
             "cpus": "{{ user `cpus`}}",
             "disk_cache": "unsafe",
             "disk_size": "{{user `disk_size`}}",
+            "disk_interface": "virtio-scsi",
             "floppy_files": [
                 "{{user `autounattend`}}",
                 "./files/WindowsPowershell.lnk",
@@ -33,48 +34,13 @@
             "iso_urls": [
                 "{{user `iso_url`}}"
             ],
+            "cd_files": [
+                "{{ user `driver_iso_dir`}}/*"
+            ],
             "memory": "{{ user `memory`}}",
             "net_device": "virtio-net",
             "output_directory": "output/{{ user `name` }}_{{ build_type }}",
             "name": "{{ user `name` }}",
-            "qemuargs": [
-                [
-                    "-smp",
-                    "2"
-                ],
-                [
-                    "-drive",
-                    "file={{ user `driver_iso` }},media=cdrom,index=3"
-                ],
-                [
-                    "-drive",
-                    "file=output/{{ user `name` }}_{{ build_type }}/{{ .Name }},if=none,id=hd,cache=writeback,discard=ignore,format=raw,index=1"
-                ],
-                [
-                    "-device",
-                    "virtio-scsi,id=scsi"
-                ],
-                [
-                    "-device",
-                    "scsi-hd,drive=hd"
-                ],
-                [
-                    "-device",
-                    "virtio-serial"
-                ],
-                [
-                    "-device",
-                    "virtio-rng"
-                ],
-                [
-                    "-device",
-                    "virtio-balloon"
-                ],
-                [
-                    "-device",
-                    "pvpanic"
-                ]
-            ],
             "type": "qemu",
             "vm_name": "disk.raw",
             "shutdown_timeout": "2h",
@@ -177,7 +143,7 @@
         "name": "{{ env `NAME` }}",
         "iso_checksum": "file:win_iso.sha256",
         "iso_url": "{{ env `ISO_URL` }}",
-        "driver_iso": "{{ env `DRIVER_ISO` }}",
+        "driver_iso_dir": "{{ env `DRIVER_ISO_DIR` }}",
         "qemu_accelerator": "kvm",
         "winrm_password": "admin",
         "winrm_username": "admin",

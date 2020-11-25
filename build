@@ -42,6 +42,7 @@ function get_driver_iso() {
     iso_url="${1}"
     iso_path="${2}"
     iso_sha256="${3}"
+    iso_extract_dir="${4}"
 
     if [ ! -f "${iso_path}" ]; then
         if curl -o "${iso_path}" "${iso_url}"; then
@@ -58,6 +59,17 @@ function get_driver_iso() {
     else
         logit "SHA256 validated for ${grn}${iso_path}${white}!" "INFO"
     fi
+
+    # The verified ISO is the source of truth, so re-extract each time
+    if [ -d "${iso_extract_dir}" ]; then
+        rm -rf "${iso_extract_dir}"
+    fi
+
+    if ! 7z x "-o${iso_extract_dir}" "${iso_path}"; then
+        logit "Something went wrong with ISO extraction!" "ERROR"
+        exit 1
+    fi
+
 }
 
 function logit() {
@@ -147,6 +159,12 @@ function check_prereqs() {
     if ! command -v docopts &>/dev/null; then
         logit "${red}docopts could not be found!${white}" "ERROR"
         logit "See https://github.com/docopt/docopts#install for install instructions." "ERROR"
+        retval=1
+    fi
+
+    if ! command -v 7z &>/dev/null; then
+        logit "${red}p7zip (7z) could not be found!${white}" "ERROR"
+        logit "Use your operating system package manager to install it." "ERROR"
         retval=1
     fi
 
@@ -260,6 +278,7 @@ function main() {
         local _extra_args
         local _driver_iso_url
         local _driver_iso_path
+        local _driver_iso_dir
         local _driver_iso_sha256
 
         _sha256=$(_jq '.sha256 // empty')
@@ -274,12 +293,13 @@ function main() {
         _driver_iso_url=$(_jq '.driver_iso_url // empty')
         _driver_iso_sha256=$(_jq '.driver_iso_sha256 // empty')
         _driver_iso_path="./packer_cache/$(basename "${_driver_iso_url}")"
+        _driver_iso_dir="./packer_cache/$(basename "${_driver_iso_url}" .iso)"
 
         mkdir -p ./packer_cache
         if [ -n "${_driver_iso_url}" ]; then
-            get_driver_iso "${_driver_iso_url}" "${_driver_iso_path}" "${_driver_iso_sha256}"
+            get_driver_iso "${_driver_iso_url}" "${_driver_iso_path}" "${_driver_iso_sha256}" "${_driver_iso_dir}"
 
-            _extra_json=$(echo "${_extra_json}" | jq --arg driver_iso "${_driver_iso_path}" '. + {"driver_iso": $driver_iso}')
+            _extra_json=$(echo "${_extra_json}" | jq --arg driver_iso_dir "${_driver_iso_dir}" '. + {"driver_iso_dir": $driver_iso_dir}')
         fi
 
         if [ "${headless}" == "true" ]; then
