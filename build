@@ -193,11 +193,11 @@ function indent() { sed 's/^/  /'; }
 
 function list() {
     echo "Available builds:"
-    yq r "${IMAGES_YML}" '[].name' | indent
+    yq eval '.[].name' "${IMAGES_YML}" | indent
 
     echo
     echo "Available tags:"
-    yq r "${IMAGES_YML}" '[].tags' | sort -u | sed 's/^- //' | indent
+    yq eval '.[].tags' "${IMAGES_YML}"  | sort -u | sed 's/^- //' | indent
 
     echo
     echo "For full details, review ${blu}${IMAGES_YML}${white}."
@@ -235,7 +235,7 @@ function main() {
             tags+='"'${item}'"'
         done
         tags+=']'
-        builds=$(yq r -j images.yml | jq --argjson tags "${tags}" '[.[] | select(.tags[] | index($tags[]))] | unique_by(.name)')
+        builds=$(yq eval -j images.yml | jq --argjson tags "${tags}" '[.[] | select(.tags[] | index($tags[]))] | unique_by(.name)')
     fi
 
     if [ -n "${name[*]}" ]; then
@@ -251,7 +251,7 @@ function main() {
             names+='"'${item}'"'
         done
         names+=']'
-        builds=$(yq r -j images.yml | jq --argjson names "${names}" '[.[] | select(.name | index($names[]))] | unique_by(.name)')
+        builds=$(yq eval -j images.yml | jq --argjson names "${names}" '[.[] | select(.name | index($names[]))] | unique_by(.name)')
     fi
 
     # shellcheck disable=SC2128
