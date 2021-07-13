@@ -11,6 +11,8 @@ be present. This becomes particularly important over time
 **Build windows 10 VM**
 
 ```
+export GCS_BUCKET=my-bucket
+export GCP_PROJECT=my-gce-project
 ./build --debug windows-10
 ```
 
