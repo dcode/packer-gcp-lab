@@ -24,22 +24,6 @@
             "output_directory": "output/{{ build_name }}_{{ build_type }}",
             "qemuargs": [
                 [
-                    "-smp",
-                    "2"
-                ],
-                [
-                    "-drive",
-                    "file=output/{{ build_name }}_{{ build_type }}/{{ .Name }},if=none,id=hd,cache=writeback,discard=ignore,format=raw,index=1"
-                ],
-                [
-                    "-device",
-                    "virtio-scsi,id=scsi"
-                ],
-                [
-                    "-device",
-                    "scsi-hd,drive=hd"
-                ],
-                [
                     "-device",
                     "virtio-serial"
                 ],

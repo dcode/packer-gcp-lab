@@ -1,5 +1,7 @@
 #!/bin/bash -eux
 
+setup_xvnc="${setup_xvnc:-false}"
+
 retry() {
     local COUNT=1
     local RESULT=0

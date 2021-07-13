@@ -16,6 +16,8 @@
 #######################################
 ## Linux Guest Environment
 
+skip_gcp_tools="${skip_gcp_tools:-false}"
+
 if [ "${skip_gcp_tools}" == "true" ]; then
        exit 0
 fi
