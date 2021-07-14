@@ -3,17 +3,14 @@
 
 This directory contains [Packer](https://www.packer.io/) build scripts to creating standardized VM templates.
 By using packer, we can ensure that when VMs are loaded they have the specific build steps that we expect to
-be present. This becomes particularly important over time
-
-
-**NOTE**: Everything below could be a lie and needs to be updated. Namely, it's been a bit since I've touched this, so I updated it with as much as I could remember at the moment. TLDR:
+be present. This becomes particularly important over time.
 
 **Build windows 10 VM**
 
 ```
 export GCS_BUCKET=my-bucket
 export GCP_PROJECT=my-gce-project
-./build --debug windows-10
+./build -d --var-file=variables.json windows-10 
 ```
 
 -----
@@ -51,9 +48,9 @@ The builds are executed on a local QEMU instance. I built them primarily using q
 
 ## Images
 
-The `build` script processes configuration in `images.yml` and wraps `packer`, passing in a number of parameters via stdin as a vars file.
+The `build` script processes configuration in `images.yml` and wraps `packer`, passing in a number of parameters via stdin as a vars file. You can also override any user variables in the Packer template by using the `--var-file` option.
 
 ## Results
 
-I stripped out my production info, but this would feasibly upload to your GCP project and process it as an imported image via a bucket you configure. That's controlled by the environment vars `GCP_PROJECT` and `GCS_BUCKET`.
+I stripped out my production info, but this would feasibly upload to your GCP project and process it as an imported image via a bucket you configure. That's controlled by the environment vars `GCP_PROJECT` and `GCS_BUCKET`. Use the `--skip-import` option to disable importing images.
 
