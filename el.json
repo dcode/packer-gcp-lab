@@ -1,11 +1,9 @@
 {
-    "_comment1": "NAME=centos-7 CENTOS_VERSION=7 ISO_URL=https://mirrors.edge.kernel.org/centos/7.8.2003/isos/x86_64/CentOS-7-x86_64-Minimal-2003.iso ISO_CHECKSUM=sha256:659691c28a0e672558b003d223f83938f254b39875ee7559d1a4a14c79173193 packer build -var commit=$(git rev-parse --short HEAD) centos.json",
-    "_comment2": "NAME=centos-8 CENTOS_VERSION=8 ISO_URL=https://mirrors.edge.kernel.org/centos/8.2.2004/isos/x86_64/CentOS-8.2.2004-x86_64-boot.iso  ISO_CHECKSUM=sha256:c67876a5602faa17f68b40ccf2628799b87454aa67700f0f57eec15c6ccdd98c packer build -var commit=$(git rev-parse --short HEAD) centos.json",
     "builders": [
         {
             "accelerator": "{{ user `qemu_accelerator`}}",
             "boot_command": [
-                "<up><wait><tab> text biosdevname=0 net.ifnames=0 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/centos{{ user `centos_version` }}-ks.cfg<enter><wait>"
+                "<up><wait><tab> inst.text biosdevname=0 net.ifnames=0 inst.repo=cdrom inst.ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/el/el{{ user `os_version` }}-ks.cfg {{ user `extra_bootcmd` }}<enter><wait>"
             ],
             "boot_wait": "10s",
             "cpus": "{{ user `cpus`}}",
@@ -13,7 +11,7 @@
             "format": "raw",
             "headless": "{{ user `headless`}}",
             "display": "{{ user `display` }}",
-            "http_directory": "installer-configs/centos",
+            "http_directory": "installer-configs/",
             "iso_checksum": "{{ user `iso_checksum` }}",
             "iso_urls": [
                 "{{ user `iso_local`}}",
@@ -40,7 +38,6 @@
                     "pvpanic"
                 ]
             ],
-            "shutdown_command": "/sbin/shutdown -hP now",
             "ssh_password": "root_password_will_be_deleted",
             "ssh_port": 22,
             "ssh_username": "root",
@@ -87,13 +84,13 @@
         {
             "expect_disconnect": "true",
             "scripts": [
-                "scripts/centos/base.sh",
-                "scripts/centos/network.sh",
-                "scripts/centos/ntp.sh",
-                "scripts/centos/yum.sh",
-                "scripts/centos/tuning.sh",
-                "scripts/centos/randomness.sh",
-                "scripts/centos/reboot.sh"
+                "scripts/el/base.sh",
+                "scripts/el/network.sh",
+                "scripts/el/ntp.sh",
+                "scripts/el/yum.sh",
+                "scripts/el/tuning.sh",
+                "scripts/el/randomness.sh",
+                "scripts/el/reboot.sh"
             ],
             "start_retry_timeout": "15m",
             "type": "shell",
@@ -111,15 +108,15 @@
             ]
         },
         {
-            "pause_before": "120s",
+            "expect_disconnect": "true",
             "scripts": [
-                "scripts/centos/kernel.sh",
-                "scripts/centos/gce-linux.sh",
-                "scripts/centos/floppy.sh",
-                "scripts/centos/ssh.sh",
-                "scripts/centos/xvncserver.sh",
-                "scripts/centos/unyum.sh",
-                "scripts/centos/cleanup.sh"
+                "scripts/el/kernel.sh",
+                "scripts/el/gce-linux.sh",
+                "scripts/el/floppy.sh",
+                "scripts/el/ssh.sh",
+                "scripts/el/xvncserver.sh",
+                "scripts/el/unyum.sh",
+                "scripts/el/cleanup.sh"
             ],
             "start_retry_timeout": "15m",
             "type": "shell",
@@ -139,9 +136,10 @@
         "iso_checksum": "{{ env `ISO_CHECKSUM` }}",
         "iso_local": "",
         "iso_url": "{{ env `ISO_URL` }}",
-        "centos_version": "{{ env `CENTOS_VERSION` }}",
+        "os_version": "{{ env `OS_VERSION` }}",
         "environment": "",
         "ssh_public_key": "{{ env `AUTHORIZED_KEYS`}}",
+        "extra_bootcmd": "",
         "commit": "0000000",
         "home": "{{ env `HOME` }}",
         "gcs_bucket": "{{ env `GCS_BUCKET` }}",

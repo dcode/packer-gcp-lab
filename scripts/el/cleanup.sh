@@ -36,3 +36,6 @@ find /var/log -type f -exec truncate --size=0 {} \;
 # Wipe the temp directory.
 printf "Purge the setup files and temporary data.\n"
 rm --recursive --force /var/tmp/* /tmp/* /var/cache/yum/* /tmp/ks-script*
+
+# Moved here since we delete the root password
+/sbin/shutdown -hP +1 --no-wall

@@ -3,6 +3,7 @@
 retry() {
   local COUNT=1
   local RESULT=0
+  local DELAY=0
   while [[ "${COUNT}" -le 10 ]]; do
     [[ "${RESULT}" -ne 0 ]] && {
       [ "$(which tput 2>/dev/null)" != "" ] && tput setaf 1
@@ -29,7 +30,7 @@ retry() {
 # shellcheck disable=SC1091
 . "/etc/os-release"
 
-if [ "${VERSION_ID}" -eq 7 ]; then
+if [ "$(echo "${VERSION_ID} >= 7" | bc)" -ne 0 ] && [ "$(echo "${VERSION_ID} < 8" | bc)" -ne 0 ]; then
 
   ## Disable IPv6 for Yum.
   printf "ip_resolve=4" >>/etc/yum.conf
@@ -84,54 +85,43 @@ if [ "${VERSION_ID}" -eq 7 ]; then
   sed -i 's/apply_updates =.*/apply_updates = yes/' /etc/yum/yum-cron.conf
   systemctl enable yum-cron
 
-elif [ "${VERSION_ID}" -eq 8 ]; then
+elif [ "$(echo "${VERSION_ID} >= 8" | bc)" -ne 0 ] && [ "$(echo "${VERSION_ID} < 9" | bc)" -ne 0 ]; then
 
   # Tell dnf to retry 128 times before failing, so unattended installs don't skip packages when errors occur.
   printf "\nretries=128\ndeltarpm=0\nmetadata_expire=0\nmirrorlist_expire=0\n" >>/etc/dnf.conf
 
-  # CentOS Repo Setup
-  sed -i -e "s/^#baseurl/baseurl/g" /etc/yum.repos.d/CentOS-Base.repo
-  sed -i -e "s/^mirrorlist/#mirrorlist/g" /etc/yum.repos.d/CentOS-Base.repo
-
-  sed -i -e "s/^#baseurl/baseurl/g" /etc/yum.repos.d/CentOS-AppStream.repo
-  sed -i -e "s/^mirrorlist/#mirrorlist/g" /etc/yum.repos.d/CentOS-AppStream.repo
-
-  sed -i -e "s/^#baseurl/baseurl/g" /etc/yum.repos.d/CentOS-PowerTools.repo
-  sed -i -e "s/^mirrorlist/#mirrorlist/g" /etc/yum.repos.d/CentOS-PowerTools.repo
-
-  sed -i -e "s/^#baseurl/baseurl/g" /etc/yum.repos.d/CentOS-Extras.repo
-  sed -i -e "s/^mirrorlist/#mirrorlist/g" /etc/yum.repos.d/CentOS-Extras.repo
-
-  sed -i -e "s/^#baseurl/baseurl/g" /etc/yum.repos.d/CentOS-centosplus.repo
-  sed -i -e "s/^mirrorlist/#mirrorlist/g" /etc/yum.repos.d/CentOS-centosplus.repo
-
-  rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
-
-  # Disable the physical media repos, along with fasttrack repos.
-  sed --in-place "s/^/# /g" /etc/yum.repos.d/CentOS-Media.repo
-  sed --in-place "s/# #/##/g" /etc/yum.repos.d/CentOS-Media.repo
-  sed --in-place "s/^/# /g" /etc/yum.repos.d/CentOS-Vault.repo
-  sed --in-place "s/# #/##/g" /etc/yum.repos.d/CentOS-Vault.repo
-  sed --in-place "s/^/# /g" /etc/yum.repos.d/CentOS-CR.repo
-  sed --in-place "s/# #/##/g" /etc/yum.repos.d/CentOS-CR.repo
-  sed --in-place "s/^/# /g" /etc/yum.repos.d/CentOS-fasttrack.repo
-  sed --in-place "s/# #/##/g" /etc/yum.repos.d/CentOS-fasttrack.repo
-
   # EPEL Repo Setup
   retry dnf --quiet --assumeyes --enablerepo=extras install epel-release
 
-  sed -i -e "s/^#baseurl/baseurl/g" /etc/yum.repos.d/epel.repo
-  sed -i -e "s/^mirrorlist/#mirrorlist/g" /etc/yum.repos.d/epel.repo
+  # Disable mirrorlist/metalink to accelerate downloads via proxy and ensure repeatability
+  # shellcheck disable=SC2013
+  for item in $(grep -lE 'mirrorlist|metalink' /etc/yum.repos.d/*.repo); do
+    if grep -q 'download.example' "${item}"; then
+      continue
+    fi
+    sed --in-place=.orig \
+      --expression "s/^mirrorlist/#mirrorlist/g" \
+      --expression "s/^metalink/#metalink/g" \
+      --expression "s/^#baseurl/baseurl/g" "${item}"
+  done
 
-  rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-8
+  # Add all local GPG keys
+  # shellcheck disable=SC2046,SC2013,SC2002
+  for item in $(cat $(grep -lE 'mirrorlist|metalink' -- *.repo) | awk -F= '/gpgkey/ { print $2 }' | sed 's|file://||' | sort -u); do
+    rpm --import "${item}"
+  done
 
-  # Disable the testing repo.
-  sed --in-place "s/^/# /g" /etc/yum.repos.d/epel-testing.repo
-  sed --in-place "s/# #/##/g" /etc/yum.repos.d/epel-testing.repo
+  # Disable the physical media repos, along with fasttrack repos.
+  # shellcheck disable=SC2013
+  for item in $(grep -liE 'media|vault|cr|continuous|fasttrack' /etc/yum.repos.d/*.repo); do
+    # shellcheck disable=SC2002
+    for repo in $(cat "{item}" | grep -oP '^\[\K[^\]]+'); do
+      dnf config-manager --disable "${repo}"
+    done
+  done
 
-  # Disable the playground repo.
-  sed --in-place "s/^/# /g" /etc/yum.repos.d/epel-playground.repo
-  sed --in-place "s/# #/##/g" /etc/yum.repos.d/epel-playground.repo
+  # Disable the epel testing and playground repo.
+  dnf config-manager --disable epel-testing epel-playground
 
   # Force metadata update
   retry dnf clean all
@@ -141,16 +131,10 @@ elif [ "${VERSION_ID}" -eq 8 ]; then
   retry dnf --assumeyes update
 
   # Install the basic packages we'd expect to find.
-  # The whois package was removed from EPEL because it will be included with CentOS 8.2, when released.
-  # add whois
-  retry dnf --assumeyes install dmidecode dnf-utils bash-completion unzip man man-pages mlocate vim-enhanced bind-utils lsof net-tools coreutils grep gawk sed curl patch sysstat psmisc python36 tmux git
+  retry dnf --assumeyes install bc dmidecode dnf-utils bash-completion unzip man man-pages mlocate vim-enhanced bind-utils lsof net-tools coreutils grep gawk sed curl patch sysstat psmisc python36 tmux git whois
 
-  if [ -f /etc/yum.repos.d/CentOS-Vault.repo.rpmnew ]; then
-    rm --force /etc/yum.repos.d/CentOS-Vault.repo.rpmnew
-  fi
-
-  if [ -f /etc/yum.repos.d/CentOS-Media.repo.rpmnew ]; then
-    rm --force /etc/yum.repos.d/CentOS-Media.repo.rpmnew
-  fi
-
+  # Remove changed repo files
+  for item in /etc/yum.repos.d/*.repo.rpmnew; do
+    rm --force "${item}"
+  done
 fi

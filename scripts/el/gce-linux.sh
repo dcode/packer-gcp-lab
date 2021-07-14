@@ -31,13 +31,17 @@ rm rpm-package-key.gpg
 
 yum updateinfo
 
+# shellcheck disable=SC1091
 . "/etc/os-release"
+
+# EL7 doesn't have PLATFORM_ID https://bugzilla.redhat.com/show_bug.cgi?id=1666657
+_platform=$(echo "${PLATFORM_ID:-"platform:el7"}" | awk -F: '{ print $2 }')
 
 # Install google cloud repos
 sudo tee /etc/yum.repos.d/google-cloud.repo <<EOM
 [google-compute-engine]
 name=Google Compute Engine
-baseurl=https://packages.cloud.google.com/yum/repos/google-compute-engine-el${VERSION_ID}-x86_64-stable
+baseurl=https://packages.cloud.google.com/yum/repos/google-compute-engine-${_platform}-x86_64-stable
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
@@ -46,7 +50,7 @@ gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
 
 [google-cloud-sdk]
 name=Google Cloud SDK
-baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el${VERSION_ID}-x86_64
+baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-${_platform}-x86_64
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
