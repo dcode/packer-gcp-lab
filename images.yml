@@ -4,8 +4,8 @@
   windows_version: "10"
   driver_iso_url: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.189-1/virtio-win-0.1.189.iso
   driver_iso_sha256: 97e9f9c7a47cb3d2ba744b8e1c78008a20a2804c89657fcae47113a96885c566
-  iso_url: https://software-download.microsoft.com/download/pr/19042.508.200927-1902.20h2_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso
-  sha256: 574f00380ead9e4b53921c33bf348b5a2fa976ffad1d5fa20466ddf7f0258964
+  iso_url: https://software-download.microsoft.com/download/sg/19043.928.210409-1212.21h1_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso
+  sha256: 026607e7aa7ff80441045d8830556bf8899062ca9b3c543702f112dd6ffe6078
   template: windows.json
   tags:
     - windows
