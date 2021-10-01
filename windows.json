@@ -15,15 +15,9 @@
       "disk_interface": "virtio-scsi",
       "floppy_files": [
         "{{user `autounattend`}}",
-        "./files/WindowsPowershell.lnk",
-        "./files/PinTo10.exe",
+        "./scripts/windows/ConfigureRemotingForAnsible.ps1",
+        "./scripts/windows/ConfigureRemotingForPacker.ps1",
         "./scripts/windows/fixnetwork.ps1",
-        "./scripts/windows/rearm-windows.ps1",
-        "./scripts/windows/disable-screensaver.ps1",
-        "./scripts/windows/disable-winrm.ps1",
-        "./scripts/windows/enable-winrm.ps1",
-        "./scripts/windows/microsoft-updates.bat",
-        "./scripts/windows/win-updates.ps1",
         "./scripts/windows/unattend.xml",
         "./scripts/windows/sysprep.bat"
       ],
@@ -45,8 +39,10 @@
       "vm_name": "disk.raw",
       "shutdown_timeout": "2h",
       "shutdown_command": "",
+      "winrm_insecure": "true",
       "winrm_password": "{{ user `winrm_password` }}",
-      "winrm_timeout": "12h",
+      "winrm_timeout": "30m",
+      "winrm_use_ssl": "true",
       "winrm_username": "{{ user `winrm_username` }}"
     }
   ],
@@ -87,46 +83,37 @@
   ],
   "provisioners": [
     {
+      "type": "ansible",
+      "playbook_file": "./ansible/playbook.yml",
+      "extra_arguments": [
+        "--extra-vars",
+        "\"packer_build_name={{ user `name` }} ansible_password='{{ user `winrm_password` }}' ansible_winrm_server_cert_validation=ignore ansible_winrm_connection_timeout=1000 ansible_winrm_operation_timeout_sec=1000 ansible_winrm_read_timeout_sec=1000\""
+      ],
+      "user": "admin",
+      "use_proxy": false,
+      "ansible_env_vars": [
+        "no_proxy=\"*\""
+      ]
+    },
+    {
       "scripts": [
         "./scripts/windows/install-latest-powershell.ps1",
-        "./scripts/windows/gce-windows.ps1"
+        "./scripts/windows/gce-windows.ps1",
+        "./scripts/windows/debloat-windows.ps1"
       ],
       "type": "powershell",
       "execution_policy": "unrestricted",
       "debug_mode": 1
     },
     {
-      "execute_command": "{{ .Vars }} cmd /c \"{{ .Path }}\"",
-      "remote_path": "/tmp/script.bat",
-      "scripts": [
-        "./scripts/windows/enable-rdp.bat"
-      ],
-      "type": "windows-shell"
-    },
-    {
-      "scripts": [
-        "./scripts/windows/configure-rdp.ps1",
-        "./scripts/windows/debloat-windows.ps1"
-      ],
-      "type": "powershell"
-    },
-    {
       "type": "windows-restart",
       "restart_timeout": "15m"
     },
     {
-      "scripts": [
-        "./scripts/windows/set-powerplan.ps1"
-      ],
-      "type": "powershell"
-    },
-    {
       "execute_command": "{{ .Vars }} cmd /c \"{{ .Path }}\"",
       "remote_path": "/tmp/script.bat",
       "scripts": [
-        "./scripts/windows/pin-powershell.bat",
         "./scripts/windows/compile-dotnet-assemblies.bat",
-        "./scripts/windows/set-winrm-automatic.bat",
         "./scripts/windows/dis-updates.bat"
       ],
       "type": "windows-shell"

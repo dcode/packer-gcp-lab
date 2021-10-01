@@ -1,5 +1,6 @@
 # spellchecker: disable
 ---
+# See https://github.com/ruzickap/packer-templates/blob/master/windows.json for some URLs and hashes
 - name: windows-10
   windows_version: "10"
   driver_iso_url: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.189-1/virtio-win-0.1.189.iso
