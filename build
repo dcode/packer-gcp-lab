@@ -235,7 +235,7 @@ function main() {
             tags+='"'${item}'"'
         done
         tags+=']'
-        builds=$(yq eval -j images.yml | jq --argjson tags "${tags}" '[.[] | select(.tags[] | index($tags[]))] | unique_by(.name)')
+        builds=$(yq eval -ojson images.yml | jq --argjson tags "${tags}" '[.[] | select(.tags[] | index($tags[]))] | unique_by(.name)')
     fi
 
     if [ -n "${name[*]}" ]; then
@@ -251,13 +251,13 @@ function main() {
             names+='"'${item}'"'
         done
         names+=']'
-        builds=$(yq eval -j images.yml | jq --argjson names "${names}" '[.[] | select(.name | index($names[]))] | unique_by(.name)')
+        builds=$(yq eval -ojson images.yml | jq --argjson names "${names}" '[.[] | select(.name | index($names[]))] | unique_by(.name)')
     fi
 
     # shellcheck disable=SC2128
     if [[ ("${tag}" == "all" || -z "${tag}") && -z "${name}" ]]; then
         logit "Selecting all builds." "INFO"
-        builds=$(yq r -j images.yml)
+        builds=$(yq eval -ojson images.yml)
     fi
 
     if [ "$(echo "${builds}" | jq '. | length')" -lt 1 ]; then
@@ -290,7 +290,7 @@ function main() {
         _extra_args=""
 
         printf -v _extra_json '{"name": "%s", "iso_checksum": "%s", "qemu_accelerator": "%s", "environment": "%s"}' "$(_jq '.name')" "${_iso_checksum}" "${accel}" "${_environment}"
-        
+
         if [ -n "${var_file}" ]; then
             _extra_json=$(echo "${_extra_json}" | jq -s '.[0] * .[1]' - "${var_file}")
         fi

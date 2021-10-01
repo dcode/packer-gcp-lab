@@ -89,6 +89,7 @@
     {
       "scripts": [
         "./scripts/windows/install-latest-powershell.ps1",
+        "./scripts/windows/install-chocolatey.ps1",
         "./scripts/windows/gce-windows.ps1"
       ],
       "type": "powershell",
