@@ -65,7 +65,7 @@ function get_driver_iso() {
         rm -rf "${iso_extract_dir}"
     fi
 
-    if ! 7z x "-o${iso_extract_dir}" "${iso_path}"; then
+    if ! 7z x "-o${iso_extract_dir}" "${iso_path}" >/dev/null; then
         logit "Something went wrong with ISO extraction!" "ERROR"
         exit 1
     fi
@@ -140,6 +140,8 @@ function check_prereqs() {
         logit "Commit info will not be added to the image." "WARN"
     else
         if git status >/dev/null; then
+            logit "${grn}Found git.${white}" "INFO"
+            logit "Commit info will be added to the image." "INFO"
             commit=$(git rev-parse --short HEAD)
         fi
     fi
@@ -289,7 +291,7 @@ function main() {
         _extra_bootcmd=$(_jq '.sha128 // empty')
         _extra_args=""
 
-        printf -v _extra_json '{"name": "%s", "iso_checksum": "%s", "qemu_accelerator": "%s", "environment": "%s"}' "$(_jq '.name')" "${_iso_checksum}" "${accel}" "${_environment}"
+        printf -v _extra_json '{"name": "%s", "image_family": "%s", "iso_checksum": "%s", "qemu_accelerator": "%s", "environment": "%s"}' "$(_jq '.name')" "$(_jq '.name')" "${_iso_checksum}" "${accel}" "${_environment}"
 
         if [ -n "${var_file}" ]; then
             _extra_json=$(echo "${_extra_json}" | jq -s '.[0] * .[1]' - "${var_file}")
@@ -331,9 +333,10 @@ function main() {
         vars_json_debug=$(echo "${vars_json}" | jq '.' | sed '2,$s/^/[DEBUG] /')
         logit "${vars_json_debug}" "DEBUG"
 
+        echo "${vars_json}" > ./packer_cache/build_vars.json
         if [ "${validate}" == "true" ]; then
             # shellcheck disable=SC2086
-            if echo "${vars_json}" | packer validate ${_extra_args} -var-file /dev/stdin "$(_jq '.template')"; then
+            if packer validate ${_extra_args} -var-file ./packer_cache/build_vars.json "$(_jq '.template')"; then
                 logit "Packer template ${grn}$(_jq '.template')${white} validated for build named ${grn}$(_jq '.name')${white} successfully." "INFO"
                 exit 0
             else
@@ -343,7 +346,7 @@ function main() {
             fi
         else
             # shellcheck disable=SC2086
-            if ! (echo "${vars_json}" | packer build ${_extra_args} -var-file /dev/stdin "$(_jq '.template')"); then
+            if ! (packer build ${_extra_args} -var-file ./packer_cache/build_vars.json "$(_jq '.template')"); then
                 retval=$?
                 logit "Packer failed to build for template ${red}$(_jq '.template')${white} for the build named ${red}$(_jq '.name')${white}." "ERROR"
                 exit ${retval}

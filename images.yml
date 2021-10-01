@@ -6,7 +6,7 @@
   driver_iso_sha256: 97e9f9c7a47cb3d2ba744b8e1c78008a20a2804c89657fcae47113a96885c566
   iso_url: https://software-download.microsoft.com/download/sg/19043.928.210409-1212.21h1_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso
   sha256: 026607e7aa7ff80441045d8830556bf8899062ca9b3c543702f112dd6ffe6078
-  template: windows.json
+  template: windows.pkr.hcl
   tags:
     - windows
     - client
