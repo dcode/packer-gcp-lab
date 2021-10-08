@@ -1,10 +1,9 @@
 - hosts: default
   vars:
-    bleachbit_url: https://download.bleachbit.org/BleachBit-4.4.0-portable.zip
     install_updates: False
   tasks:
     - name: Harden and Activate RDP
-      win_regedit:
+      ansible.windows.win_regedit:
         key: 'HKLM:\System\CurrentControlSet\Control\Terminal Server'
         value: "{{ item.value }}"
         data: "{{ item.data }}"
@@ -16,23 +15,23 @@
         - {value: "fDenyTSConnections", data: 0} # Allow RDP
 
     - name: Disable Ctrl + Alt + Del
-      win_regedit:
+      ansible.windows.win_regedit:
         key: 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System'
         value: "DisableCAD"
         data: 1
         datatype: dword
 
     - name: Use the plaintext WinRM transport and force it to use basic authentication
-      win_shell: winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+      ansible.windows.win_shell: winrm set winrm/config/service '@{AllowUnencrypted="true"}'
 
     - name: Enable Firewall Inbound Rules Group
-      win_shell: Enable-NetFirewallRule -DisplayGroup "{{ item }}"
+      ansible.windows.win_shell: Enable-NetFirewallRule -DisplayGroup "{{ item }}"
       loop:
         - Remote Desktop
         - Windows Remote Management
 
     - name: Create scheduled task to install OpenSSH
-      win_scheduled_task:
+      community.windows.win_scheduled_task:
         name: openssh-server-install
         username: SYSTEM
         actions:
@@ -49,7 +48,7 @@
         - type: registration
 
     - name: Wait for the scheduled task to complete
-      win_scheduled_task_stat:
+      community.windows.win_scheduled_task_stat:
         name: openssh-server-install
       register: task_stat
       until: (task_stat.state is defined and task_stat.state.status != "TASK_STATE_RUNNING") or (task_stat.task_exists == False)
@@ -57,7 +56,7 @@
       delay: 10
 
     - name: set the default shell to PowerShell
-      win_regedit:
+      ansible.windows.win_regedit:
         path: HKLM:\SOFTWARE\OpenSSH
         name: DefaultShell
         data: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
@@ -71,7 +70,7 @@
     #     state: started
 
     - name: Configure Explorer settings
-      win_regedit:
+      ansible.windows.win_regedit:
         key: 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\'
         value: "{{ item.value }}"
         data: "{{ item.data }}"
@@ -82,7 +81,7 @@
         - {value: "StartMenuAdminTools", data: 1} # Show Admin Tools in Start Menu
 
     - name: Disable Hibernation mode
-      win_regedit:
+      ansible.windows.win_regedit:
         key: 'HKLM:\SYSTEM\CurrentControlSet\Control\Power'
         value: "{{ item.value }}"
         data: "{{ item.data }}"
@@ -93,7 +92,7 @@
       when: ansible_distribution is search("Microsoft Windows 10")
 
     - name: Set ultimate performance mode
-      win_regedit:
+      ansible.windows.win_regedit:
         key: 'HKLM:\SOFTWARE\Policies\Microsoft\Power\PowerSettings'
         value: "ActivePowerScheme"
         data: "e9a42b02-d5df-448d-aa00-03f14749eb61" # Enable Ultimate Performance plan
@@ -101,28 +100,28 @@
       when: ansible_distribution is search("Microsoft Windows 10")
 
     - name: Enable AutoLogon
-      win_regedit:
+      ansible.windows.win_regedit:
         key: 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
         value: "DefaultPassword"
         data: "admin"
         datatype: string
 
     - name: Disable password expiration for admin user
-      win_shell: wmic useraccount where "name='admin'" set PasswordExpires=FALSE
+      ansible.windows.win_shell: wmic useraccount where "name='admin'" set PasswordExpires=FALSE
 
     - name: Remove all current pagefiles
-      win_pagefile:
+      community.windows.win_pagefile:
         remove_all: yes
         automatic: no
         state: absent
 
     - name: Disable Hibernate Mode
-      win_command: powercfg -h off
+      ansible.windows.win_command: powercfg -h off
       changed_when: false
       when: ansible_distribution is search("Microsoft Windows 10")
 
     - name: Install windows updates
-      win_updates:
+      ansible.windows.win_updates:
         category_names:
           - Application
           - Connectors
@@ -142,6 +141,6 @@
       when: install_updates
 
     - name: Windows reboot
-      win_reboot:
+      ansible.windows.win_reboot:
         reboot_timeout: 10000
       when: install_updates and windows_updates.reboot_required and allow_windows_reboot_during_win_updates
