@@ -31,23 +31,44 @@
         - Remote Desktop
         - Windows Remote Management
 
-    # Install choco package
-    - name: Install chocolatey and packages
-      win_chocolatey:
-        name:
-        - vscode
+    - name: Create scheduled task to install OpenSSH
+      win_scheduled_task:
+        name: openssh-server-install
+        username: SYSTEM
+        actions:
+        - path: PowerShell.exe
+          arguments: |
+            Get-WindowsCapability -Online -Name "OpenSSH.Server*" | Add-WindowsCapability -Online;
+            Start-Service sshd;
+            Set-Service -Name sshd -StartupType 'Automatic';
 
-    - name: Install OpenSSH Server for Windows
-      win_feature:
-        name:
-        - OpenSSH.Server
+        # Remove this action if the task shouldn't be deleted on completion
+        - path: cmd.exe
+          arguments: /c schtasks.exe /Delete /TN "openssh-server-install" /F
+        triggers:
+        - type: registration
+
+    - name: Wait for the scheduled task to complete
+      win_scheduled_task_stat:
+        name: openssh-server-install
+      register: task_stat
+      until: (task_stat.state is defined and task_stat.state.status != "TASK_STATE_RUNNING") or (task_stat.task_exists == False)
+      retries: 12
+      delay: 10
+
+    - name: set the default shell to PowerShell
+      win_regedit:
+        path: HKLM:\SOFTWARE\OpenSSH
+        name: DefaultShell
+        data: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+        type: string
         state: present
 
-    - name: Enable OpenSSH Server on Startup
-      win_service:
-        name: sshd
-        start_mode: auto
-        start: started
+    # - name: Enable OpenSSH Server on Startup
+    #   win_service:
+    #     name: sshd
+    #     start_mode: auto
+    #     state: started
 
     - name: Configure Explorer settings
       win_regedit:
@@ -78,7 +99,6 @@
         data: "e9a42b02-d5df-448d-aa00-03f14749eb61" # Enable Ultimate Performance plan
         datatype: string
       when: ansible_distribution is search("Microsoft Windows 10")
-
 
     - name: Enable AutoLogon
       win_regedit:

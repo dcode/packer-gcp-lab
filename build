@@ -135,6 +135,7 @@ function check_prereqs() {
         retval=1
     fi
 
+    commit="0000000"
     if ! command -v git &>/dev/null; then
         logit "${red}git could not be found${white}." "WARN"
         logit "Commit info will not be added to the image." "WARN"
@@ -289,7 +290,7 @@ function main() {
         _iso_checksum=${_sha256:-${_sha128:-${_md5:-}}}
         _environment=$(_jq '.environment // empty | to_entries | map("\(.key)=\(.value)") | join(",")')
         _extra_bootcmd=$(_jq '.sha128 // empty')
-        _extra_args=""
+        _extra_args="-timestamp-ui"
 
         printf -v _extra_json '{"name": "%s", "image_family": "%s", "iso_checksum": "%s", "qemu_accelerator": "%s", "environment": "%s"}' "$(_jq '.name')" "$(_jq '.name')" "${_iso_checksum}" "${accel}" "${_environment}"
 
