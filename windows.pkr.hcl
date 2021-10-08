@@ -246,7 +246,6 @@ build {
       "./scripts/windows/install-chocolatey.ps1",
     ]
     execution_policy = "unrestricted"
-    debug_mode = 1
   }
 
   provisioner "ansible" {
@@ -263,16 +262,10 @@ build {
   }
 
   provisioner "powershell" {
-    execution_policy = "unrestricted"
-    scripts          = ["./scripts/windows/install-latest-powershell.ps1"]
-  }
-
-  provisioner "powershell" {
     scripts = ["./scripts/windows/debloat-windows.ps1"]
   }
 
   provisioner "powershell" {
-    debug_mode       = 1
     execution_policy = "unrestricted"
     scripts          = ["./scripts/windows/gce-windows.ps1"]
     only             = ["qemu.gcp"]
