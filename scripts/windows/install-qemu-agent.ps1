@@ -74,7 +74,7 @@ function Install-GuestAgent {
     ) 
 
     # Ensure we have the serial driver installed
-    $vioserial_drv = Get-ChildItem "${DriverDisk}" -Filter 'vioserial'
+    $vioserial_drv = Get-ChildItem -Path "${DriverDisk}" -Filter 'vioserial'
     Install-Driver "${vioserial_drv}"
 
     $os_arch = $null
@@ -89,7 +89,7 @@ function Install-GuestAgent {
     }
 
     # Install the agent
-    $installer = Get-ChildItem "${DriverDisk}/guest-agent" -Filter "*${os_arch}.msi"
+    $installer = Get-ChildItem -Path "${DriverDisk}\guest-agent" -Filter "*${os_arch}.msi"
     Install-MSI -File ${installer}
     
 
